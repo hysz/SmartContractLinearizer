@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
 import re
 import pprint
@@ -98,7 +100,8 @@ for contractName in contracts:
 #print('-- DESCENDANTS -- ')
 #pprint.pprint(descendants)
 
-# get list of contracts in order of least ancestors (most likely to be a correct ordering)
+# get list of contracts in alphabetical order with least..most descendants ("most base-like" to "most-derived")
+# note - the alphabetization means that interfaces (IFoobar.sol) will be ordered first
 descendantsAsListSortedAlpha = sorted(descendants.items())
 descendantsAsListSortedByLeastDescendants = sorted(descendantsAsListSortedAlpha, key=lambda item: len(item[1]))
 contractsSortedByLeastDescendants = [x[0] for x in descendantsAsListSortedByLeastDescendants]
@@ -118,7 +121,10 @@ def isLinearized(dependencyList):
             j += 1
     return True
 
-
+# we go through the list of contracts that are sorted alphabetically / least..most descendants ("most base-like" to "most-derived").
+# we try to place each element as early in the output list as possible.
+# we end up with ordering: alphabetically / least..most descendants / linearized
+# we iterate with the invariant that <currentList> is always linearized.
 def createList(contractNameIdx, contractList, currentList):
     # base case
     if contractNameIdx == len(contractsSortedByLeastDescendants):
