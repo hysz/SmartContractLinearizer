@@ -19,8 +19,11 @@ ancestors = {}
 descendants = {}
 # linearized dependentContracts (this is what we're trying to build!)
 linearizedDependencyList = []
+# line numbers that define the smart contract; these will be repladced fixed contract definition.
+contractData = {}
 
 pathPattern = sys.argv[1]
+fixContracts = len(sys.argv) > 2 and sys.argv[2] == '--fix-contracts'
 
 # populate <contracts> / <contractDependencies> / <dependentContracts>
 pathlist = Path("./").glob(pathPattern)
@@ -30,7 +33,7 @@ for path in pathlist:
     f = open(pathStr)
     foundContractDefinition = False
     inImportSection = False
-    for line in f:
+    for lineNumber,line in enumerate(f):
         if re.search('^library .* [ ]*$', line) or re.search('^interface .* is[ ]*$', line):
             break
         elif re.search('^contract .* is[ ]*$', line):
@@ -45,10 +48,16 @@ for path in pathlist:
                 contracts.append(contractName)
             if not contractName in dependentContracts:
                 dependentContracts[contractName] = []
+            # store contract data
+            contractData[contractName] = {}
+            contractData[contractName]["path"] = pathStr
+            contractData[contractName]["startLine"] = lineNumber
+            contractData[contractName]["endLine"] = -1
 
         elif inImportSection:
             if re.search('^{$', line):
                 inImportSection = False
+                contractData[contractName]["endLine"] = lineNumber - 1
                 continue
             elif re.search('//', line):
                 # skip comment
@@ -174,16 +183,42 @@ print('--CONTRACT DEFINITIONS FOR CONTRACTS WE PROCESSED--')
 # So, even though contract E{} does not directly depend on A{} - it still must be included in the dependency list
 # Because of this, we include all descendants in the output.
 for contractName in contractsToProcess:
-    print('contract %s is'%contractName)
+    # open contract & read lines
+    _contractData = contractData[contractName]
+    f = open(_contractData["path"], 'r+')
+    contractContents = f.readlines()
+    contractPreamble = contractContents[0 : _contractData["startLine"] + 1]
+    conractImplementation = contractContents[_contractData["endLine"] + 1:]
+    contractDependenciesInSolidity = []
+
+    # remove lines with existing, incorrect definitin.
+    del contractContents[_contractData["startLine"] : _contractData["endLine"] - 1]
+
     numDependenciesFound = 0
+    currentLineIndex = _contractData["startLine"]
     numDependenciesToFind = len(descendants[contractName])
     for dependencyName in linearizedDependencyList:
         if dependencyName in descendants[contractName]:
             numDependenciesFound += 1
-            if numDependenciesFound == numDependenciesToFind:
-                print('    %s'%dependencyName)
+            dependencyStr = ""
+            if numDependenciesFound < numDependenciesToFind:
+                dependencyStr = '    %s,\n'%dependencyName
             else:
-                print('    %s,'%dependencyName)
-    print()
-print()
+                dependencyStr = '    %s\n'%dependencyName
+
+            # add dependency to contract contents
+            contractDependenciesInSolidity.append(dependencyStr)
+
+    # update contract contents
+    if fixContracts == True:
+        print("***** Fixing %s *****"%contractData[contractName]["path"])
+        updatedContractContents = contractPreamble + contractDependenciesInSolidity + conractImplementation
+        f.seek(0)
+        f.writelines(updatedContractContents) # no truncation bc length is >= original
+    else:
+        print("contract %s is"%contractName)
+        for line in contractDependenciesInSolidity:
+                print(line, end="")
+        print()
+    f.close()
             
