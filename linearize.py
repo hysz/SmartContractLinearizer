@@ -154,14 +154,31 @@ for i,dependencyName in enumerate(linearizedDependencyList):
         print('%s (descendants=%d)'%(dependencyName,len(descendants[dependencyName])))
 print()
 
-# print out original contract headers
+# print out fixed contract headers
 print('--CONTRACT DEFINITIONS FOR CONTRACTS WE PROCESSED--')
+# Note that we construct the dependency list using the *entire* list of decscendants.
+# This removes any ambiguity caused by implicitly inheriting members.
+# Ex:
+# contract A {}
+# contract B {}
+# contract C {}
+# contract D is A, B {}
+#
+# Suppose now that contract E will inherit from B{} and D{}
+# The following follows "most base-like" to "most-derived":
+#   contract E is B, D {}
+# However, it unfolds to: B{}, A{}, B{}, D{}, E{} - which is wrong because B{} appears twice.
+# The contract inheritance for E{} is:
+#   contract E is A{}, B{}, D{}
+# 
+# So, even though contract E{} does not directly depend on A{} - it still must be included in the dependency list
+# Because of this, we include all descendants in the output.
 for contractName in contractsToProcess:
     print('contract %s is'%contractName)
     numDependenciesFound = 0
-    numDependenciesToFind = len(contractDependencies[contractName])
+    numDependenciesToFind = len(descendants[contractName])
     for dependencyName in linearizedDependencyList:
-        if dependencyName in contractDependencies[contractName]:
+        if dependencyName in descendants[contractName]:
             numDependenciesFound += 1
             if numDependenciesFound == numDependenciesToFind:
                 print('    %s'%dependencyName)
