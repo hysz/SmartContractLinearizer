@@ -55,7 +55,7 @@ for path in pathlist:
             contractData[contractName]["endLine"] = -1
 
         elif inImportSection:
-            if re.search('^{$', line):
+            if re.search('^[ ]*{[ ]*$', line):
                 inImportSection = False
                 contractData[contractName]["endLine"] = lineNumber - 1
                 continue
