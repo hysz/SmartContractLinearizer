@@ -4,6 +4,14 @@ from pathlib import Path
 import re
 import pprint
 import sys
+import argparse
+import os
+
+parser = argparse.ArgumentParser(description='Linearize solidity smart contracts.')
+parser.add_argument('--path', dest='path', type=str, default='./', help='directory with smart contracts; defaults to current directory.')
+parser.add_argument('--glob', dest='glob', type=str, default='', help='globbing pattern to find contracts within `--path`; defaults finding all files with extension \'*.sol\'')
+parser.add_argument('--fix', dest='fix', action='store_true', default=False, help='include to fix contracts (backup your contracts first! #inbeta)')
+args = parser.parse_args()
 
 # list of contracts to process (derived from input globbing pattern)
 contractsToProcess = []
@@ -23,12 +31,17 @@ descendants = {}
 linearizedDependencyList = []
 # line numbers that define the smart contract; these will be repladced fixed contract definition.
 contractData = {}
+# should fix the contracts?
+fixContracts = args.fix
 
-pathPattern = sys.argv[1]
-fixContracts = len(sys.argv) > 2 and sys.argv[2] == '--fix-contracts'
 
-# populate <contracts> / <contractDependencies> / <dependentContracts>
-pathlist = Path("./").glob(pathPattern)
+pathlist = Path(args.path).glob(args.glob) if args.glob != '' else []
+if args.glob == '':
+    pathlist = [os.path.join(root, name)
+             for root, dirs, files in os.walk(args.path)
+             for name in files
+             if name.endswith((".sol"))]
+
 for path in pathlist:
     # because path is object not string
     pathStr = str(path)

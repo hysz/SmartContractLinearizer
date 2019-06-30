@@ -3,24 +3,32 @@ For the error 'Linearization of inheritance graph impossible'. Worked on my repo
 
 It will read through a list of input solidity contracts and create a linearized dependency list.
 
-If you include `--fix-contracts` then it will also update your contracts - THIS SCRIPT IS IN BETA - backup your work first.
+If you include `--fix then it will also update your contracts - THIS SCRIPT IS IN BETA - backup your work first.
 
-If you do not incldue `--fix-contracts` then it will output the fixed contract definitions for to apply manually.
+If you do not incldue `--fix` then it will output the fixed contract definitions for to apply manually.
 
 # Usage
 ```
-python3 linearize.py <globbing pattern>
+usage: linearize.py [-h] [--path PATH] [--glob GLOB] [--fix]
+
+Linearize solidity smart contracts.
+
+optional arguments:
+  -h, --help   show this help message and exit
+  --path PATH  directory with smart contracts; defaults to current directory.
+  --glob GLOB  globbing pattern to find contracts within `--path`; defaults
+               finding all files with extension '*.sol'
+  --fix        include to fix contracts (backup your contracts first! #inbeta)
 ```
 
 # Example Usage
 ```
-python3 linearize.py '*.sol' 
-python3 linearize.py '**/*.sol' 
+linearize.py --path ./contracts --glob '**/*.sol' --fix
 ```
 
 # Example Outputs
 ```
-$ python3 linearize.py '*.sol'
+$ linearize.py --glob '*.sol'
 
 --LINEARIZED DEPENDENCY LIST--
 B (descendants=0),
@@ -33,7 +41,7 @@ contract A is
 ```
 
 ```
-$ python3 linearize.py '*.sol' --fix-contracts
+$ linearize.py --glob '*.sol' --fix
 
 --LINEARIZED DEPENDENCY LIST--
 B (descendants=0),
