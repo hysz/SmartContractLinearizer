@@ -3,7 +3,7 @@ For the error 'Linearization of inheritance graph impossible'. Worked on my repo
 
 It will read through a list of input solidity contracts and create a linearized dependency list.
 
-If you include `--fix then it will also update your contracts - THIS SCRIPT IS IN BETA - backup your work first.
+If you include `--fix` then it will also update your contracts - THIS SCRIPT IS IN BETA - backup your work first.
 
 If you do not incldue `--fix` then it will output the fixed contract definitions for to apply manually.
 
