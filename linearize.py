@@ -7,6 +7,8 @@ import sys
 
 # list of contracts to process (derived from input globbing pattern)
 contractsToProcess = []
+# list of contracts to process with no dependencies
+contractsToProcessWithNoDependencies = []
 # list of all contracts
 contracts = []
 # maps contract -> dependencies of contract (the contract depends on each element)
@@ -34,7 +36,9 @@ for path in pathlist:
     foundContractDefinition = False
     inImportSection = False
     for lineNumber,line in enumerate(f):
-        if re.search('^library .* [ ]*$', line) or re.search('^interface .* is[ ]*$', line):
+        if re.search('^library [A-Za-z0-9]+$', line) or re.search('^interface [A-Za-z0-9]+.*$', line) or re.search('^contract [A-Za-z0-9]+[ {]*$', line):
+            contractName = line.split()[1]
+            contractsToProcessWithNoDependencies.append(contractName)
             break
         elif re.search('^contract .* is[ ]*$', line):
             foundContractDefinition = True
@@ -221,4 +225,10 @@ for contractName in contractsToProcess:
                 print(line, end="")
         print()
     f.close()
+
+print("The following contracts were discovered as dependencies, but were not found in the files we processed.")
+print("If you're still having issues, try including them and running again!")
+for contractName in contracts:
+    if not contractName in contractsToProcess and not contractName in contractsToProcessWithNoDependencies:
+        print("\t- %s"%contractName)
             
